@@ -21,6 +21,7 @@ def start_navigation(url="https://www2.telenet.be/residential/nl"):
             link +=obj.get_attribute('href')
             link = link.split("?")[0]
             options = ['internet', 'mobiel', 'tv']
+            #options = ['internet', 'mobiel']
             contains = sum([option in link for option in options])
             if contains >= 1:
                 print(link)
@@ -59,23 +60,23 @@ def scrape_packs(context,link,pack):
 def scrape_summary_page(summary,link):
     ret ={}
     print(f"SUMMARY from page: {link}")
-    title = get_text_from_tag(summary,'.text-align--left')
+    title = get_text_from_tag(summary,['.text-align--left', '.cmp-text'])
     print("Title: ",title)
     ret["title"] = title
-    desc=get_text_from_tag(summary,'.cmp-text__listing--primary-ticks')
+    desc=get_text_from_tag(summary,['.cmp-text__listing--primary-ticks'])
     print("Desc: ",desc)
     ret["description"] = desc
-    price = get_text_from_tag(summary,'.promo-highlight__third-row')
+    price = get_text_from_tag(summary,['.promo-highlight__third-row'])
     price = re.sub('[€\s\n]', '', price)
     price = price.replace(',','.')
     print("Price: ",price)
     ret["nominal_price"] = price
     # Check for discount duration
-    duration = get_text_from_tag(summary,'span.duration-month')
+    duration = get_text_from_tag(summary,['span.duration-month'])
     if duration:
         duration = re.findall(r'\d+', duration)[0]
         price_after_duration=re.sub('[€\s\n]', '',
-                        get_text_from_tag(summary,'.promo-highlight__second-row'))
+                        get_text_from_tag(summary,['.promo-highlight__second-row']))
         price_after_duration = price_after_duration.replace(',','.')
         print("Duration: ",duration)
         print("Price after: ",price_after_duration)
@@ -90,19 +91,19 @@ def scrape_more_info(context,link):
     page.wait_for_selector('.promo-highlight__third-row')
     print(f"MORE INFO from {link}")
     ret={}
-    title = get_text_from_tag(page,'.text-align--left')
+    title = get_text_from_tag(page,['.text-align--left'])
     print("Title: ",title)
     ret["title"] = title
-    price=get_text_from_tag(page,'.promo-highlight__third-row')
+    price=get_text_from_tag(page,['.promo-highlight__third-row'])
     price=re.sub('[€\s\n]', '', price)
     price = price.replace(',','.')
     print("Price: ",price)
     ret["nominal_price"] = price
 
-    duration=get_text_from_tag(page,'span.duration-month')
+    duration=get_text_from_tag(page,['span.duration-month'])
     if duration:
         duration=re.findall(r'\d+', duration)[0]
-        price_after_duration=get_text_from_tag(page,'.promo-highlight__second-row')
+        price_after_duration=get_text_from_tag(page,['.promo-highlight__second-row'])
         price_after_duration=re.sub('[€\s\n]', '', price_after_duration)
         price_after_duration = price_after_duration.replace(',','.')
         print("Duration: ",duration)
@@ -110,23 +111,27 @@ def scrape_more_info(context,link):
         ret["discount_price"] = ret["nominal_price"]
         ret["nominal_price"] = price_after_duration
         ret["discount_duration"] = duration
-    desc = get_text_from_tag(page,'.cmp-text__listing--primary-ticks', True)
+    desc = get_text_from_tag(page,['.cmp-text__listing--primary-ticks'], True)
     print(desc)
     ret["description"] = desc
     page.close()
     return ret
 
 def get_text_from_tag(element,selector, multiple=False):
-    res = None
-    if multiple:
-        inner_el=element.query_selector_all(selector)
-        if inner_el:
-            res="\n".join([x.inner_text() for x in inner_el])
-    else:
-        inner_el=element.query_selector(selector)
-        if inner_el:
-            res=inner_el.inner_text()
+    res = ''
+    for sel in selector:
+        if multiple:
+            inner_el=element.query_selector_all(sel)
+            if inner_el:
+                res+=" " + "\n".join([x.inner_text() for x in inner_el])
+        else:
+            inner_el=element.query_selector(sel)
+            if inner_el:
+                tmp = inner_el.inner_text()
+                if len(tmp) < 50:
+                    res+=" " + tmp
     return res
+
 def run():
     start_navigation()
 
