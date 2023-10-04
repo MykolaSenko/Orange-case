@@ -7,6 +7,26 @@ import re
 import pandas as pd
 from playwright.sync_api import sync_playwright, Route, expect
 
+config = {'ONE': {'iterator': '.aem-Grid--10'
+                  ,'data': {'title':{
+                                    'tag':'.cmp-responsivegrid__container >> h3'
+                                    ,'multiple':False}}
+                            ,'components': {
+                                            'tag':'h4'
+                                            ,'multiple': True}
+                            ,'download_speed': {
+                                            're': ''}
+                            ,'benefits' : {
+                                        're':''}
+                            }
+        ,'default': {'iterator': '.cmp-product-summary'
+                     ,'sub_link_tag': "a:has-text('Meer Info')"
+                     ,'data': {'title':{
+                     }
+                     }
+        }
+        }
+
 def start_navigation(url="https://www2.telenet.be/residential/nl"):
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=False)
@@ -21,22 +41,25 @@ def start_navigation(url="https://www2.telenet.be/residential/nl"):
             link +=obj.get_attribute('href')
             link = link.split("?")[0]
             options = ['internet', 'mobiel', 'tv']
-            #options = ['internet', 'mobiel']
             contains = sum([option in link for option in options])
             if contains >= 1:
                 print(link)
                 pack = False
                 if contains > 1:
                     pack=True
-                ret = scrape_packs(context,link,pack)
+                ret = navigator(context,link,pack)
                 results.extend(ret)
         df = pd.DataFrame(results)
         df.to_csv("sample.csv")
         browser.close()
 
-def scrape_packs(context,link,pack):
+def navigator(context,link,pack, params=None):
         scrape_tag=".cmp-product-summary"
         sublink_tag="a:has-text('Meer Info')"
+        global config
+        if params:
+            scrape_tag=params['iterator']
+            sublink_tag=params.get('sub_link_tag','fnskfgbdkd')
         page=context.new_page()
         page.goto(link)
         #Makes sure price is loaded
@@ -45,9 +68,12 @@ def scrape_packs(context,link,pack):
         results = []
         for summary in summaries:
             if summary.query_selector(sublink_tag):
-                target=summary.query_selector(sublink_tag) #.locator(sublink_tag)
-                target =target.get_attribute('href')
-                ret = scrape_more_info(context, target)
+                target=summary.query_selector(sublink_tag)
+                target="https://www2.telenet.be"+target.get_attribute('href')
+                if '/one/' not in target:
+                    ret = scrape_more_info(context, target)    
+                else:
+                    ret = navigator(context, target,pack, config["ONE"])
                 ret["link"] = target
             else:
                 ret = scrape_summary_page(summary,link)
@@ -87,11 +113,11 @@ def scrape_summary_page(summary,link):
 
 def scrape_more_info(context,link):
     page=context.new_page()
-    page.goto("https://www2.telenet.be"+link)
+    page.goto(link)
     page.wait_for_selector('.promo-highlight__third-row')
     print(f"MORE INFO from {link}")
     ret={}
-    title = get_text_from_tag(page,['.text-align--left'])
+    title = get_text_from_tag(page,['.cmp-responsivegrid__container >> h1'])
     print("Title: ",title)
     ret["title"] = title
     price=get_text_from_tag(page,['.promo-highlight__third-row'])
@@ -116,6 +142,9 @@ def scrape_more_info(context,link):
     ret["description"] = desc
     page.close()
     return ret
+
+def scrape_more_info_one():
+    return None
 
 def get_text_from_tag(element,selector, multiple=False):
     res = ''
