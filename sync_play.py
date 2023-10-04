@@ -27,8 +27,8 @@ def start_navigation(url="https://www2.telenet.be/residential/nl"):
                 pack = False
                 if contains > 1:
                     pack=True
-                    ret = scrape_packs(context,link,pack)
-            results.extend(ret)
+                ret = scrape_packs(context,link,pack)
+                results.extend(ret)
         df = pd.DataFrame(results)
         df.to_csv("sample.csv")
         browser.close()
@@ -39,7 +39,7 @@ def scrape_packs(context,link,pack):
         page=context.new_page()
         page.goto(link)
         #Makes sure price is loaded
-        expect(page.locator('.promo-highlight__third-row'))
+        page.wait_for_selector('.promo-highlight__third-row')
         summaries=page.query_selector_all(scrape_tag)
         results = []
         for summary in summaries:
@@ -59,28 +59,24 @@ def scrape_packs(context,link,pack):
 def scrape_summary_page(summary,link):
     ret ={}
     print(f"SUMMARY from page: {link}")
-    #expect(summary.locator('.promo-highlight__third-row'))
-    title_el=summary.query_selector('.text-align--left')
-    if title_el:
-        title=title_el.inner_text()
-        print("Title: ",title)
-        ret["title"] = title
-    desc_el=summary.query_selector('.cmp-text__listing--primary-ticks')
-    if desc_el:
-        desc=desc_el.inner_text()
-        print("Desc: ",desc)
-        ret["desc"] = desc
-    price_el=summary.query_selector('.promo-highlight__third-row')
-    if price_el:
-        price=price_el.inner_text()
-        print("Price: ",price)
-        ret["nominal_price"] = price
+    title = get_text_from_tag(summary,'.text-align--left')
+    print("Title: ",title)
+    ret["title"] = title
+    desc=get_text_from_tag(summary,'.cmp-text__listing--primary-ticks')
+    print("Desc: ",desc)
+    ret["description"] = desc
+    price = get_text_from_tag(summary,'.promo-highlight__third-row')
+    price = re.sub('[€\s\n]', '', price)
+    price = price.replace(',','.')
+    print("Price: ",price)
+    ret["nominal_price"] = price
     # Check for discount duration
-    duration_el=summary.query_selector('span.duration-month')
-    if duration_el:
-        duration =duration_el.inner_text()
+    duration = get_text_from_tag(summary,'span.duration-month')
+    if duration:
         duration = re.findall(r'\d+', duration)[0]
-        price_after_duration=summary.query_selector('.promo-highlight__second-row').inner_text()
+        price_after_duration=re.sub('[€\s\n]', '',
+                        get_text_from_tag(summary,'.promo-highlight__second-row'))
+        price_after_duration = price_after_duration.replace(',','.')
         print("Duration: ",duration)
         print("Price after: ",price_after_duration)
         ret["discount_price"] = ret["nominal_price"]
@@ -91,38 +87,46 @@ def scrape_summary_page(summary,link):
 def scrape_more_info(context,link):
     page=context.new_page()
     page.goto("https://www2.telenet.be"+link)
-    expect(page.locator('.promo-highlight__third-row'))
+    page.wait_for_selector('.promo-highlight__third-row')
     print(f"MORE INFO from {link}")
     ret={}
-    title_el=page.query_selector('.text-align--left')
-    if title_el:
-        title=title_el.inner_text()
-        print("Title: ",title)
-        ret["title"] = title
-    price_el=page.query_selector('.promo-highlight__third-row')
-    if price_el:
-        price=price_el.inner_text()
-        print("Price: ",price)
-        ret["nominal_price"] = price
-    duration_el=page.query_selector('span.duration-month')
-    if duration_el:
-        duration =duration_el.inner_text()
-        duration = re.findall(r'\d+', duration)[0]
-        price_after_duration=page.query_selector('.promo-highlight__second-row').inner_text()
+    title = get_text_from_tag(page,'.text-align--left')
+    print("Title: ",title)
+    ret["title"] = title
+    price=get_text_from_tag(page,'.promo-highlight__third-row')
+    price=re.sub('[€\s\n]', '', price)
+    price = price.replace(',','.')
+    print("Price: ",price)
+    ret["nominal_price"] = price
+
+    duration=get_text_from_tag(page,'span.duration-month')
+    if duration:
+        duration=re.findall(r'\d+', duration)[0]
+        price_after_duration=get_text_from_tag(page,'.promo-highlight__second-row')
+        price_after_duration=re.sub('[€\s\n]', '', price_after_duration)
+        price_after_duration = price_after_duration.replace(',','.')
         print("Duration: ",duration)
         print("Price after: ",price_after_duration)
         ret["discount_price"] = ret["nominal_price"]
         ret["nominal_price"] = price_after_duration
         ret["discount_duration"] = duration
-
-    if page.query_selector(".cmp-text__listing--primary-ticks"):
-        ul=page.query_selector_all(".cmp-text__listing--primary-ticks")
-        text ="\n".join([x.inner_text() for x in ul])
-        print(text)
-        ret["desc"] = text
+    desc = get_text_from_tag(page,'.cmp-text__listing--primary-ticks', True)
+    print(desc)
+    ret["description"] = desc
     page.close()
     return ret
 
+def get_text_from_tag(element,selector, multiple=False):
+    res = None
+    if multiple:
+        inner_el=element.query_selector_all(selector)
+        if inner_el:
+            res="\n".join([x.inner_text() for x in inner_el])
+    else:
+        inner_el=element.query_selector(selector)
+        if inner_el:
+            res=inner_el.inner_text()
+    return res
 def run():
     start_navigation()
 
