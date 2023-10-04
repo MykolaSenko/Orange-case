@@ -5,29 +5,72 @@ import asyncio
 import time
 import re
 import pandas as pd
+from copy import deepcopy
 from playwright.sync_api import sync_playwright, Route, expect
 
-config = {'ONE': {'iterator': '.aem-Grid--10'
-                  ,'data': {'title':{
-                                    'tag':'.cmp-responsivegrid__container >> h3'
-                                    ,'multiple':False}}
+config = {'residential/nl/producten/one/': {
+                    'navigation': {
+                        'iterator': '.aem-Grid--10'
+                        #,'iterator_size': None
+                        }
+                    ,'data': {'title':{
+                                    'tag':'h3'
+                                    ,'multiple':False}
+                            ,'description':{
+                                    'tag':'.cmp-text__listing--primary-ticks'
+                                    ,'multiple': True}
                             ,'components': {
                                             'tag':'h4'
                                             ,'multiple': True}
-                            ,'download_speed': {
-                                            're': ''}
+                            ,'internet_speed': {
+                                            'tag':'.text'
+                                            ,'multiple': True
+                                            ,'re': '.*internet.*?(\d+\s[MG]bps)'
+                                            ,'re_type': 'search'}
                             ,'benefits' : {
-                                        're':''}
-                            }
-        ,'default': {'iterator': '.cmp-product-summary'
-                     ,'sub_link_tag': "a:has-text('Meer Info')"
+                                        're':'*.Gratis?([\w\s]+)'
+                                        ,'re_type': 'find_all'}
+                            }}
+        ,'default': {'navigation':{
+                        'iterator': '.cmp-product-summary'
+                        ,'iterator_size': None
+                        ,'sub_link_tag': "a:has-text('Meer Info')"}
                      ,'data': {'title':{
+                                        'tag':'.text-align--left'}
+                              ,'description':{
+                                        'tag':'.cmp-text__listing--primary-ticks'}
+                              ,'promotion_duration':{
+                                        'tag':'span.duration-month'
+                                        ,'re': '(\d+)'
+                                        ,'re_type': 'search'}
+                              ,'initial_price':{
+                                        'tag':'.promo-highlight__third-row'
+                                        ,'re': ['[€\s\n]','']
+                                        ,'re_type': 'sub'}
+                              ,'post_promotion_price':{
+                                        'tag':'.promo-highlight__second-row'
+                                        ,'re': ['[€\s\n]','']
+                                        ,'re_type': 'sub'}
+                                }
                      }
-                     }
-        }
+        ,'---' : {'navigation':{
+                        'iterator': '.cmp-responsivegrid__container'
+                        ,'iterator_size':1}
+                  ,'data': {'components': {
+                                        'tag':'.heading--4'
+                                        ,'multiple': True}
+                              ,'description':{
+                                        'tag':'.cmp-text__listing--primary-ticks'
+                                        ,'multiple':True}
+                                }
+                }
         }
 
+results = []
+
 def start_navigation(url="https://www2.telenet.be/residential/nl"):
+    global config
+    global results
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=False)
         context=browser.new_context()
@@ -43,50 +86,59 @@ def start_navigation(url="https://www2.telenet.be/residential/nl"):
             options = ['internet', 'mobiel', 'tv']
             contains = sum([option in link for option in options])
             if contains >= 1:
-                print(link)
                 pack = False
                 if contains > 1:
                     pack=True
-                ret = navigator(context,link,pack)
-                results.extend(ret)
+                navigator(context,link,pack, config['default'])
         df = pd.DataFrame(results)
         df.to_csv("sample.csv")
         browser.close()
 
-def navigator(context,link,pack, params=None):
-        scrape_tag=".cmp-product-summary"
-        sublink_tag="a:has-text('Meer Info')"
-        global config
-        if params:
-            scrape_tag=params['iterator']
-            sublink_tag=params.get('sub_link_tag','fnskfgbdkd')
+def navigator(context,link,pack,params):
+        global results
+        scrape_tag=params['navigation']['iterator']
+        sublink_tag=params['navigation'].get('sub_link_tag','gjkdgbkd')
         page=context.new_page()
         page.goto(link)
         #Makes sure price is loaded
         page.wait_for_selector('.promo-highlight__third-row')
-        summaries=page.query_selector_all(scrape_tag)
-        results = []
+        summaries=page.query_selector_all(scrape_tag)[:params['navigation']['iterator_size']]
         for summary in summaries:
             if summary.query_selector(sublink_tag):
                 target=summary.query_selector(sublink_tag)
                 target="https://www2.telenet.be"+target.get_attribute('href')
-                if '/one/' not in target:
-                    ret = scrape_more_info(context, target)    
-                else:
-                    ret = navigator(context, target,pack, config["ONE"])
-                ret["link"] = target
+                next_config=get_config_based_target(target)
+                navigator(context, target,pack, next_config)
             else:
-                ret = scrape_summary_page(summary,link)
+                ret = scrape_page(summary,link, params)
                 ret["link"] = link
-            ret["Type"] = "Pack" if pack else "Product"
-            results.append(ret)
+                ret["Type"] = "Pack" if pack else "Product"
+                results.append(ret)
         page.close()
         return results
 
-def scrape_summary_page(summary,link):
+def get_config_based_target(target):
+    global config
+    ret=deepcopy(config)
+    keys=ret.keys()
+    for key in keys:
+        if key in target:
+            for k in ret['default'].keys():
+                ret['default'][k].update(ret[key][k])
+            break
+    return ret['default']
+
+def scrape_page(summary,link,params):
     ret ={}
     print(f"SUMMARY from page: {link}")
-    title = get_text_from_tag(summary,['.text-align--left', '.cmp-text'])
+    for key,item in params['data'].items():
+        result = get_text_from_tag(summary,[item.get('tag','body')],item.get('multiple',False))
+        if item.get('re') and result != '':
+            result=execute_regex(item['re'], item['re_type'], result)
+        ret[key]=result
+    """
+    #title = get_text_from_tag(summary,['.text-align--left', '.cmp-text'])
+    
     print("Title: ",title)
     ret["title"] = title
     desc=get_text_from_tag(summary,['.cmp-text__listing--primary-ticks'])
@@ -109,6 +161,7 @@ def scrape_summary_page(summary,link):
         ret["discount_price"] = ret["nominal_price"]
         ret["nominal_price"] = price_after_duration
         ret["discount_duration"] = duration
+    """
     return ret
 
 def scrape_more_info(context,link):
@@ -143,8 +196,15 @@ def scrape_more_info(context,link):
     page.close()
     return ret
 
-def scrape_more_info_one():
-    return None
+def execute_regex(pattern, re_type, text):
+    res=''
+    if re_type=='search':
+        res=re.search(pattern,text).group(1)
+    elif re_type=='sub':
+        res=re.sub(pattern[0], pattern[1], text)
+    elif re_type=='find_all':
+        res="\n".join(re.find_all(pattern, text))
+    return res
 
 def get_text_from_tag(element,selector, multiple=False):
     res = ''
@@ -157,8 +217,8 @@ def get_text_from_tag(element,selector, multiple=False):
             inner_el=element.query_selector(sel)
             if inner_el:
                 tmp = inner_el.inner_text()
-                if len(tmp) < 50:
-                    res+=" " + tmp
+                #if len(tmp) < 50:
+                res+=" " + tmp
     return res
 
 def run():
