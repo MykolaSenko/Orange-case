@@ -1,0 +1,63 @@
+{"params" : {"studenten": {
+                    "navigation": {
+                        "iterator": ".aem-Grid--10"
+                        }
+                    ,"data": {"title":{
+                                    "tag":"h3"
+                                    ,"multiple":false}
+                            ,"description":{
+                                    "tag":".cmp-text__listing--primary-ticks"
+                                    ,"multiple": true}
+                            ,"components": {
+                                            "tag":"h4"
+                                            ,"multiple": true}
+                            ,"internet_speed": {
+                                            "tag":".text"
+                                            ,"multiple": true
+                                            ,"re": ".*internet.*?(\\d+\\s[MG]bps)"
+                                            ,"re_type": "search"}
+                            ,"benefits" : {
+                                        "re":"*.Gratis?([\\w\\s]+)"
+                                        ,"re_type": "find_all"}
+                            }}
+        ,"---" : {"navigation":{
+                        "iterator": ".cmp-responsivegrid__container"
+                        ,"iterator_size":1}
+                  ,"data": {"components": {
+                                        "tag":".heading--4"
+                                        ,"multiple": true}
+                              ,"description":{
+                                        "tag":".cmp-text__listing--primary-ticks"
+                                        ,"multiple":true}
+                            }
+                }
+        ,"default": {"navigation":{
+                        "iterator": ".cmp-product-summary"
+                        ,"iterator_size": null
+                        ,"sub_link_tag": "a:has-text('Meer Info')"
+                        ,"page_load": ".promo-highlight__third-row"
+                        ,"url_prefix" : "https://www2.telenet.be"}
+                     ,"data": {"title":{
+                                        "tag":".text-align--left"}
+                              ,"description":{
+                                        "tag":".cmp-text__listing--primary-ticks"}
+                              ,"promotion_duration":{
+                                        "tag":"span.duration-month"
+                                        ,"re": "(\\d+)"
+                                        ,"re_type": "search"}
+                              ,"initial_price":{
+                                        "tag":".promo-highlight__third-row"
+                                        ,"re": ["[€\\s\\n]",""]
+                                        ,"re_type": "sub"}
+                              ,"post_promotion_price":{
+                                        "tag":".promo-highlight__second-row"
+                                        ,"re": ["[€\\s\\n]",""]
+                                        ,"re_type": "sub"}
+                            }
+                     }
+        }
+,
+"start": {"url":"https://www2.telenet.be/residential/nl"
+       ,"locator": "[href*='promo']"
+}
+}
