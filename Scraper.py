@@ -8,17 +8,22 @@ import pandas as pd
 import json
 from copy import deepcopy
 from playwright.sync_api import sync_playwright, Route, expect
+import structlog
 
 class Scraper():
     def __init__(self,scraper):
+        self._logger = structlog.get_logger()
         self._results = []
         self._scraper = scraper
-        with open(scraper + '_config.json','r') as file:
-            self._config = json.load(file)
-    
+        try:
+            with open(scraper + '_config.json','r') as file:
+                self._config = json.load(file)
+        except:
+            self._logger.critical(f'Error loading config', config_file=scraper)
+
     def filter(self,objs):
         return objs
-    
+
     def run(self):
         with sync_playwright() as p:
             browser=p.chromium.launch(headless=False)
@@ -36,11 +41,16 @@ class Scraper():
             if obj.get_attribute('href'):
                 link=self._config['params']['default']['navigation']['url_prefix']
                 link +=obj.get_attribute('href')
+                scrape_type = link.split("/")[-2]
+                next_config=self.get_config_based_target(link)
             else:
                 # If it's not link it's clickable object, so we click
                 link = 'here'
+                scrape_type = url.split("/")[-2]
                 obj.click()
-            self.navigator(context,link, self._config['params']['default'])
+                next_config=self._config['params']['default']
+            self._logger.info('navigate', destiny=link)
+            self.navigator(context,link,next_config, scrape_type)
         df = pd.DataFrame(self._results)
         df.to_csv("data/" + self._scraper + '.csv')
 
@@ -51,59 +61,76 @@ class Scraper():
                 page=context.pages()[-1]
             else:
                 page=context.new_page()
+                page.goto(link)
             #Makes sure critical info is loaded
             try:
-                page.goto(link)
-                page.wait_for_selector(params['navigation'].get('page_load', 'body.default-page'))
+                page.wait_for_selector(params['navigation'].get('page_load', 'body'))
             except:
-                print(f'Page {link} did not load critical information')
+                self._logger.critical('required information not found',
+                                  page=link,awaited_info=params['navigation'].get('page_load',
+                                                                                 'body'))
+                #print(f'Page {link} did not load critical information')
             else:
                 summaries=page.query_selector_all(scrape_tag)[:params['navigation']['iterator_size']]
+                self._logger.info('Page read', page=link, look_for=scrape_tag)
                 for summary in summaries:
                     if summary.query_selector(sublink_tag):
                         target=summary.query_selector(sublink_tag)
-                        target="https://www2.telenet.be"+target.get_attribute('href')
+                        target=params['navigation']['url_prefix']+target.get_attribute('href')
                         scrape_type += target.split("/")[-2]
                         next_config=self.get_config_based_target(target)
+                        self._logger.info('navigate', destiny=target)
                         self.navigator(context, target, next_config, scrape_type)
                     else:
+                        self._logger.info('Scraping page', page=link)
                         ret = self.scrape_page(summary,link, params)
                         ret["link"] = page.url
                         ret["scrape_type"] = scrape_type
                         self._results.append(ret)
-            finally:            
+            finally:
                 page.close()
 
     def get_config_based_target(self,target):
         ret=deepcopy(self._config['params'])
         keys=ret.keys()
-        for key in keys:
-            if key in target:
-                for k in ret['default'].keys():
-                    ret['default'][k].update(ret[key][k])
-                break
-        return ret['default']
+        try:
+            for key in keys:
+                if key in target:
+                    for k in ret['default'].keys():
+                        ret['default'][k].update(ret[key][k])
+                    break
+        except:
+            self._logger.critical('Config error', target=target)
+        finally:
+            return ret['default']
 
     def scrape_page(self,summary,link,params):
         ret ={}
-        #print(f"SUMMARY from page: {link}")
         for key,item in params['data'].items():
             result = self.get_text_from_tag(summary,[item.get('tag','body')],item.get('multiple',False))
             if len(result)> 1:
                 if item.get('re'):
                     result=self.execute_regex(item['re'], item['re_type'], result)
                 ret[key]=result
+            else:
+                self._logger.warning('scrape failure', type='field', page=link,target=key, attempt=item.get('tag','body'))
+        if not ret:
+            self._logger.error('scrape failure', type='page', page=link)
         return ret
 
     def execute_regex(self,pattern, re_type, text):
         res=''
-        if re_type=='search':
-            res=re.search(pattern,text).group(1)
-        elif re_type=='sub':
-            res=re.sub(pattern[0], pattern[1], text)
-        elif re_type=='find_all':
-            res="\n".join(re.find_all(pattern, text))
-        return res
+        try:
+            if re_type=='search':
+                res=re.search(pattern,text).group(1)
+            elif re_type=='sub':
+                res=re.sub(pattern[0], pattern[1], text)
+            elif re_type=='find_all':
+                res="\n".join(re.find_all(pattern, text))
+        except:
+                self._logger.error('regex failure', pattern=pattern,text=text)
+        finally:
+            return res
 
     def get_text_from_tag(self,element,selector, multiple=False):
         res = ''
@@ -116,7 +143,6 @@ class Scraper():
                 inner_el=element.query_selector(sel)
                 if inner_el:
                     tmp = inner_el.inner_text()
-                    #if len(tmp) < 50:
                     res+=" " + tmp
         return res
 

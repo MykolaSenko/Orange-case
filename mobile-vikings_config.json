@@ -1,41 +1,67 @@
-{"params" : {"residential/nl/producten/one/": {
+{"params" : {"internet": {
                     "navigation": {
-                        "iterator": ".aem-Grid--10"
+                        "iterator": ".broadbandProductSelectorWidget"
                         }
                     ,"data": {"title":{
-                                    "tag":"h3"
+                                    "tag":"h4.wizardStepIntro__title"
                                     ,"multiple":false}
                             ,"description":{
-                                    "tag":".cmp-text__listing--primary-ticks"
+                                    "tag":"li"
                                     ,"multiple": true}
-                            ,"components": {
-                                            "tag":"h4"
-                                            ,"multiple": true}
                             ,"internet_speed": {
-                                            "tag":".text"
-                                            ,"multiple": true
-                                            ,"re": ".*internet.*?(\\d+\\s[MG]bps)"
+                                            "tag":"li:has-text('Download speed')"
+                                            ,"multiple": false
+                                            ,"re": ".*[dD]ownload.*?(\\d+\\s[MG]bps)"
                                             ,"re_type": "search"}
-                            ,"benefits" : {
-                                        "re":"*.Gratis?([\\w\\s]+)"
-                                        ,"re_type": "find_all"}
                             }}
-        ,"---" : {"navigation":{
-                        "iterator": ".cmp-responsivegrid__container"
-                        ,"iterator_size":1}
+        ,"fiber": {
+                "navigation": {
+                        "iterator": ".RadioGroup__item"
+                        }
+                ,"data": {"title":{
+                                "tag":".broadbandSelectorProduct__title"
+                                ,"multiple":false}
+                         ,"description":{
+                                "tag":".broadbandSelectorProduct__description"
+                                ,"multiple": false}
+                        ,"internet_speed": {
+                                        "tag":".broadbandSelectorProduct__description:has-text('Download speed')"
+                                        ,"multiple": false
+                                        ,"re": ".*[dD]ownload.*?(\\d+\\s[MG]bps)"
+                                        ,"re_type": "search"}
+                        }}
+        ,"subscription": {"navigation": {}
+                ,"data": {"title":{
+                                "tag":".data-amount"
+                                ,"multiple":false}
+                        ,"description":{
+                                "tag":".PostpaidOption__voiceTextAmount"
+                                ,"multiple": false}
+                        ,"internet_speed": {
+                                        "tag":".FourGFiveGLabel"
+                                        ,"multiple": false}
+                        }}
+        ,"combo" : {"navigation":{
+                        "iterator": ".broadbandProductSelectorComboWidget"
+                        ,"iterator_size":null} 
                   ,"data": {"components": {
                                         "tag":".heading--4"
                                         ,"multiple": true}
-                              ,"description":{
-                                        "tag":".cmp-text__listing--primary-ticks"
-                                        ,"multiple":true}
+                                        ,"description":{
+                                                "tag":"ul.okNokListCondensed"
+                                                ,"multiple":true}
+                                ,"initial_price":{
+                                        "tag":".orderSummary__top >> .monthlyPrice__price"
+                                        ,"re": ["[€\\s\\n-]",""]
+                                        ,"re_type": "sub"}
+                
                             }
                 }
         ,"default": {"navigation":{
-                        "iterator": ".broadbandProductSelectorComboWidget"
+                        "iterator": ".RadioGroup__item"
                         ,"iterator_size": null
                         ,"sub_link_tag": "a:has-text('Haha, whatever')"
-                        ,"page_load": ".orderSummary__top >> .monthlyPrice__price"
+                        ,"page_load": ".monthlyPrice__price"
                         ,"url_prefix" : ""
                                 }
                      ,"data": {"title":{
@@ -43,15 +69,9 @@
                               ,"description":{
                                         "tag":"ul.okNokListCondensed"
                                         ,"multiple":true}
-                              ,"promotion_duration":{
-                                        "tag":"span.duration-month"}
                               ,"initial_price":{
-                                        "tag":".orderSummary__top >> .monthlyPrice__price"
-                                        ,"re": ["[,€\\s\\n-]",""]
-                                        ,"re_type": "sub"}
-                              ,"post_promotion_price":{
-                                        "tag":".promo-highlight__second-row"
-                                        ,"re": ["[€\\s\\n]",""]
+                                        "tag":".monthlyPrice__price"
+                                        ,"re": ["[€\\s\\n-]",""]
                                         ,"re_type": "sub"}
                             }
                      }
