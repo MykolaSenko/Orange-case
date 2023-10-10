@@ -8,8 +8,9 @@ from selenium.webdriver.common.by import By
 def get_page(url, logger):
     """this function initialize the connection and clicks the cookie button"""
     opt=webdriver.ChromeOptions()
-    opt.add_argument("--headless")
+    # opt.add_argument("--headless")
     driver = webdriver.Chrome(options=opt)
+
     driver.get(url)
     cookie_accept = driver.find_element(By.XPATH,"//button[@ id='onetrust-accept-btn-handler']")
     cookie_accept.click()
@@ -17,7 +18,7 @@ def get_page(url, logger):
     #wait until the whole page is loaded
     try:
         body_xpath = "//head[@class = 'at-element-marker']"
-        wait = WebDriverWait(driver, 30)
+        wait = WebDriverWait(driver, 100)
         wait.until(EC.presence_of_element_located((By.XPATH,body_xpath)))
     except:
         logger.critical('scrape failure', msg="Page Timeout", type='page', page=url)
@@ -29,7 +30,7 @@ def get_category_links(link, logger):
     button_xpath = "//a[@class = 'cards--append cards--container cursor--pointer cards--shadow border--all--r border-width--all--r border-color--all--transparant color-text link link--no-underline secondary hardware-categories__items mr--l--sm mb--l--sm mb--s p--m']"
     try:
         #wait until the element is loaded
-        wait = WebDriverWait(driver, 30)
+        wait = WebDriverWait(driver, 100)
         wait.until(EC.presence_of_element_located((By.XPATH,button_xpath)))
 
         #find all categories of divices in text format
@@ -48,7 +49,7 @@ def get_category_links(link, logger):
             category_urls.append({"category":category,
                                 "url":url})
     except:
-        logger.error('scrape failure',type='page',msg=f"time out", page=link)
+        logger.error('scrape failure',type='page',msg="time out", page=link)
     driver.close()
     return category_urls
 
@@ -66,19 +67,19 @@ def get_how_many_pages(url, logger):
         except:
             return 1
     except:
-        logger.error('scrape failure',type='page',msg=f"time out", page=url)
+        logger.error('scrape failure',type='page',msg="time out", page=url)
 
 def get_all_urls(device_url, logger):
     page = 1
     total_page = get_how_many_pages(device_url, logger)
     try:
-        logger.info('Scraping page',page=device_url,amount_pages=total_page)
+        logger.info('scraping page',page=device_url,amount_pages=total_page)
         total_urls = []
 
         while page <= total_page:
             current_url = f"{device_url[:-1]}{page}"
-            logger.info('Scraping page',page=current_url)
-            driver = get_page(current_url)
+            logger.info('scraping page',page=current_url)
+            driver = get_page(current_url,logger)
 
             wait = WebDriverWait(driver, 100)
             wait.until(EC.presence_of_element_located((By.XPATH,"//head[@class = 'at-element-marker']")))
@@ -105,4 +106,4 @@ if __name__ == "__main__":
         urls = get_all_urls(category['url'], logger)
         all_devices_urls.append({"category":category['category'].replace(" ","_"),"urls":urls})
         df = pd.DataFrame(all_devices_urls)
-        df.to_csv("data_scraped/all_devices_urls.csv")
+        df.to_csv("devices_urls.csv")
