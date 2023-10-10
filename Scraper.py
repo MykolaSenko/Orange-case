@@ -37,7 +37,7 @@ class Scraper():
         objs=(page.locator(self._config['start']['locator'])
                     .all())
         objs=self.filter(objs)
-        for obj in objs[3:]:
+        for obj in objs:
             if obj.get_attribute('href'):
                 prefix=self._config['params']['default']['navigation']['url_prefix']
                 suffix=obj.get_attribute('href')
@@ -89,9 +89,10 @@ class Scraper():
                     else:
                         self._logger.info('Scraping page', page=link)
                         ret = self.scrape_page(summary,link, params)
-                        ret["link"] = page.url
-                        ret["scrape_type"] = scrape_type[0]
-                        self._results.append(ret)
+                        if ret:
+                            ret["link"] = page.url
+                            ret["scrape_type"] = scrape_type[0]
+                            self._results.append(ret)
             finally:
                 page.close()
 
@@ -116,11 +117,12 @@ class Scraper():
             if len(result)> 1:
                 if item.get('re'):
                     result=self.execute_regex(item['re'], item['re_type'], result)
-                ret[key]=result
+                if len(result) > 1:
+                    ret[key]=result
             else:
                 self._logger.warning('scrape failure', type='field', page=link,target=key, attempt=item.get('tag','body'))
         if not ret:
-            self._logger.error('scrape failure', type='page', page=link)
+            self._logger.error('scrape failure', type='page', page=link, data=summary.inner_text())
         return ret
 
     def execute_regex(self,pattern, re_type, text):
