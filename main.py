@@ -4,10 +4,11 @@ import time
 import src.scrape_urls as su
 import src.scrape_gadgets as sg
 import src.Scraper as scraper
+import pandas as pd
 
 start = time.perf_counter()
 #Scrape providers
-providers = ['telenet_promo','telenet_packs','proximus','mobile_vikings']
+providers = ['telenet_promo','telenet_packs']
 for provider in providers:
     scrp = scraper.Scraper(provider)
     scrp.run()
