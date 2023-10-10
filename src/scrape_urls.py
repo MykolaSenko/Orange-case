@@ -5,7 +5,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
-def get_page(url):
+def get_page(url, logger):
     """this function initialize the connection and clicks the cookie button"""
     opt=webdriver.ChromeOptions()
     opt.add_argument("--headless")
@@ -20,12 +20,12 @@ def get_page(url):
         wait = WebDriverWait(driver, 30)
         wait.until(EC.presence_of_element_located((By.XPATH,body_xpath)))
     except:
-        print(f"Timeout when trying to scrape{url}")
+        logger.critical('scrape failure', msg="Page Timeout", type='page', page=url)
     return driver
 
-def get_category_links(link):
+def get_category_links(link, logger):
     """This function take the main page of 'toestellen' and scrape all links to the categories"""
-    driver = get_page(link)
+    driver = get_page(link, logger)
     button_xpath = "//a[@class = 'cards--append cards--container cursor--pointer cards--shadow border--all--r border-width--all--r border-color--all--transparant color-text link link--no-underline secondary hardware-categories__items mr--l--sm mb--l--sm mb--s p--m']"
     try:
         #wait until the element is loaded
@@ -48,13 +48,13 @@ def get_category_links(link):
             category_urls.append({"category":category,
                                 "url":url})
     except:
-        print(f"time out at link {link}")
+        logger.error('scrape failure',type='page',msg=f"time out", page=link)
     driver.close()
     return category_urls
 
-def get_how_many_pages(url):
+def get_how_many_pages(url, logger):
     """this function check how many pages are listed under my single page"""
-    driver = get_page(url)
+    driver = get_page(url, logger)
     #wait until the element is loaded
     try:
         wait = WebDriverWait(driver, 30)
@@ -66,18 +66,18 @@ def get_how_many_pages(url):
         except:
             return 1
     except:
-         print(f"Time out when trying to scrape {url}")
+        logger.error('scrape failure',type='page',msg=f"time out", page=url)
 
-def get_all_urls(device_url):
+def get_all_urls(device_url, logger):
     page = 1
-    total_page = get_how_many_pages(device_url)
+    total_page = get_how_many_pages(device_url, logger)
     try:
-        print(f"total pages to scrape :{total_page}")
+        logger.info('Scraping page',page=device_url,amount_pages=total_page)
         total_urls = []
 
         while page <= total_page:
             current_url = f"{device_url[:-1]}{page}"
-            print(f"working on this url:\n{current_url}\n")
+            logger.info('Scraping page',page=current_url)
             driver = get_page(current_url)
 
             wait = WebDriverWait(driver, 100)
@@ -92,15 +92,17 @@ def get_all_urls(device_url):
             page += 1
         return(total_urls)
     except:
-        print(f"Time out when trying to scrape device {device_url}")
+        logger.critical('scrape failure', msg="Page Timeout", type='page', page=device_url)
 
 if __name__ == "__main__":
     #get the category first , the return result is a list of dictionary:
-    category_urls = get_category_links("https://www2.telenet.be/residential/nl/toestellen/?intcmp=ToestNav")
+    import structlog
+    logger = structlog.get_logger()
+    category_urls = get_category_links("https://www2.telenet.be/residential/nl/toestellen/?intcmp=ToestNav", logger)
 
     all_devices_urls = []
     for category in category_urls:
-        urls = get_all_urls(category['url'])
+        urls = get_all_urls(category['url'], logger)
         all_devices_urls.append({"category":category['category'].replace(" ","_"),"urls":urls})
         df = pd.DataFrame(all_devices_urls)
         df.to_csv("data_scraped/all_devices_urls.csv")

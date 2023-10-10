@@ -7,7 +7,7 @@ from playwright._impl._api_types import Error
 from concurrent.futures.thread import ThreadPoolExecutor
 import ast
 
-def scrape_gadgets(playwright: Playwright,link):
+def scrape_gadgets(playwright: Playwright,link, logger):
     """
     The function `scrape_gadgets` uses Playwright to scrape data from a list of links, specifically
     extracting information about smartphone models, colors, memories, regular prices, and prices for
@@ -22,21 +22,23 @@ def scrape_gadgets(playwright: Playwright,link):
     browser = playwright.chromium.launch(headless=True)
     context = browser.new_context()
     page = context.new_page()
-    page.goto(link)
-    page.get_by_role("button", name="Alle cookies aanvaarden").click(force=True)
-
+    try:
+        page.goto(link)
+        page.get_by_role("button", name="Alle cookies aanvaarden").click(force=True)
+    except:
+        logger.critical('scrape failure', msg="Page Timeout", type='page', page=link)
+        return
     try:
         page.wait_for_selector(".heading--6.heading--nomargin.hardware-product--info__content__configurations-color__label")
         colors = page.locator(".heading--6.heading--nomargin.hardware-product--info__content__configurations-color__label").all()
     except:
-        print(f"Timeout while trying to open this website:{link}")
+        logger.critical('scrape failure', msg="Page Timeout", type='page', page=link)
         return
     # The code block you provided is a loop that iterates over each color element in the `colors`
     # list. For each color element, it performs the following actions:
     if colors:
         for color_element in colors:
             color = color_element.text_content()
-            print(color)
             try:
                 page.locator("label").filter(has_text = color).check()
             except Error as e:
@@ -59,22 +61,22 @@ def scrape_gadgets(playwright: Playwright,link):
                     model = page.query_selector(".text-weight--g.hardware-sticky-header__name.mr--s.word-break--ellipsis").text_content()
                     list_of_models.append(model)
                     list_of_models.append(color)
-                    print(memory)
                     list_of_models.append(memory)
                     price_regular_tag = page.query_selector(".align-self--center.text-decoration--line-through.mr--xs--md")
                     if price_regular_tag:
                         price_regular = price_regular_tag.text_content()
                     else:
+                        logger.warning('Scrape failure', type='field',target='price_regular', page=link)
                         price_regular = None
                     list_of_models.append(price_regular)
                     price_for_clients = page.query_selector(".heading--nomargin.price--superscript-amount.heading--3").text_content()
                     list_of_models.append(price_for_clients)
                     list_of_models.append(link)
                     data.append(list_of_models)
-                # print(list_of_models)
             else:
                 list_of_models = []
                 memory = None
+                logger.warning('Scrape failure', type='field',target='memory', page=link)
                 product_id = re.findall(r"productId=(\d+)", link)
                 product_id = product_id[0]
                 list_of_models.append(product_id)
@@ -86,6 +88,7 @@ def scrape_gadgets(playwright: Playwright,link):
                 if price_regular_tag:
                     price_regular = price_regular_tag.text_content()
                 else:
+                    logger.warning('Scrape failure', type='field',target='price_regular', page=link)
                     price_regular = None
                 list_of_models.append(price_regular)
                 price_for_clients = page.query_selector(".heading--nomargin.price--superscript-amount.heading--3").text_content()
@@ -95,7 +98,9 @@ def scrape_gadgets(playwright: Playwright,link):
         else:
             list_of_models = []
             memory = None
+            logger.warning('Scrape failure', type='field',target='memory', page=link)
             color=None
+            logger.warning('Scrape failure', type='field',target='color', page=link)
             product_id = re.findall(r"productId=(\d+)", link)
             product_id = product_id[0]
             list_of_models.append(product_id)
@@ -107,6 +112,7 @@ def scrape_gadgets(playwright: Playwright,link):
             if price_regular_tag:
                 price_regular = price_regular_tag.text_content()
             else:
+                logger.warning('Scrape failure', type='field',target='price_regular', page=link)
                 price_regular = None
             list_of_models.append(price_regular)
             price_for_clients = page.query_selector(".heading--nomargin.price--superscript-amount.heading--3").text_content()
@@ -118,14 +124,14 @@ def scrape_gadgets(playwright: Playwright,link):
     browser.close()
     return data
 
-def worker(link):
+def worker(link, logger):
     with sync_playwright() as playwright:
-        data=scrape_gadgets(playwright,link)
+        data=scrape_gadgets(playwright,link, logger)
     return data
 
-def get_devices(links):
+def get_devices(links, logger):
     with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = [executor.submit(worker, link) for link in links]
+        futures = [executor.submit(worker, link, logger) for link in links]
         list_of_watch = []
         for item in futures:
             if item.result():
@@ -133,7 +139,7 @@ def get_devices(links):
     smartphones = [item for sublist in list_of_watch for item in sublist]
     return smartphones
 
-def get_urls_from_csv(path):
+def get_urls_from_csv(path, logger):
     all_urls=[]
     df = pd.read_csv(path)
     device_list = df["category"].to_list()
@@ -144,7 +150,9 @@ def get_urls_from_csv(path):
     return all_urls
 
 if __name__ == "__main__":
-    all_urls=get_urls_from_csv("data_scraped/all_devices_urls.csv")
+    import structlog
+    logger = structlog.get_logger()
+    all_urls=get_urls_from_csv("all_devices_urls.csv", logger)
 
 
     for i in all_urls:
