@@ -8,11 +8,10 @@ import pandas as pd
 import json
 from copy import deepcopy
 from playwright.sync_api import sync_playwright, Route, expect
-import structlog
 
 class Scraper():
-    def __init__(self,scraper):
-        self._logger = structlog.get_logger()
+    def __init__(self,scraper, logger):
+        self._logger = logger
         self._results = []
         self._scraper = scraper
         try:
