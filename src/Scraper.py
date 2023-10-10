@@ -45,7 +45,11 @@ class Scraper():
                     link = prefix + suffix
                 else:
                     link = suffix
-                scrape_type = [link.split("/")[-2]]
+                tmp = link.split("/")
+                if "." in tmp[-1]:
+                    scrape_type = [tmp[-1]]
+                else:
+                    scrape_type = [tmp[-2]]
                 next_config=self.get_config_based_target(link)
             else:
                 # If it's not link it's clickable object, so we click
@@ -117,7 +121,7 @@ class Scraper():
             if len(result)> 1:
                 if item.get('re'):
                     result=self.execute_regex(item['re'], item['re_type'], result)
-                if len(result) > 1:
+                if len(result) > 0:
                     ret[key]=result
             else:
                 self._logger.warning('scrape failure', type='field', page=link,target=key, attempt=item.get('tag','body'))
@@ -155,7 +159,7 @@ class Scraper():
 
 if __name__ == "__main__":
     start = time.perf_counter()
-    telenet = Scraper('telenet_promo')
+    telenet = Scraper('proximus')
     telenet.run()
     end = time.perf_counter()
     print(end-start)
