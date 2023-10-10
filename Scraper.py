@@ -19,7 +19,7 @@ class Scraper():
             with open(scraper + '_config.json','r') as file:
                 self._config = json.load(file)
         except:
-            self._logger.critical(f'Error loading config', config_file=scraper)
+            self._logger.critical('Error loading config', config_file=scraper)
 
     def filter(self,objs):
         return objs
@@ -37,16 +37,20 @@ class Scraper():
         objs=(page.locator(self._config['start']['locator'])
                     .all())
         objs=self.filter(objs)
-        for obj in objs:
+        for obj in objs[3:]:
             if obj.get_attribute('href'):
-                link=self._config['params']['default']['navigation']['url_prefix']
-                link +=obj.get_attribute('href')
-                scrape_type = link.split("/")[-2]
+                prefix=self._config['params']['default']['navigation']['url_prefix']
+                suffix=obj.get_attribute('href')
+                if prefix not in suffix:
+                    link = prefix + suffix
+                else:
+                    link = suffix
+                scrape_type = [link.split("/")[-2]]
                 next_config=self.get_config_based_target(link)
             else:
                 # If it's not link it's clickable object, so we click
                 link = 'here'
-                scrape_type = url.split("/")[-2]
+                scrape_type = [url.split("/")[-2]]
                 obj.click()
                 next_config=self._config['params']['default']
             self._logger.info('navigate', destiny=link)
@@ -54,30 +58,31 @@ class Scraper():
         df = pd.DataFrame(self._results)
         df.to_csv("data/" + self._scraper + '.csv')
 
-    def navigator(self,context,link,params, scrape_type=''):
+    def navigator(self,context,link,params, scrape_type):
             scrape_tag=params['navigation']['iterator']
             sublink_tag=params['navigation'].get('sub_link_tag','gjkdgbkd')
-            if link == 'here':
-                page=context.pages()[-1]
-            else:
-                page=context.new_page()
-                page.goto(link)
-            #Makes sure critical info is loaded
             try:
+                if link == 'here':
+                    page=context.pages()[-1]
+                else:
+                    page=context.new_page()
+                    page.goto(link)
+                #Makes sure critical info is loaded
                 page.wait_for_selector(params['navigation'].get('page_load', 'body'))
             except:
                 self._logger.critical('required information not found',
                                   page=link,awaited_info=params['navigation'].get('page_load',
                                                                                  'body'))
-                #print(f'Page {link} did not load critical information')
             else:
                 summaries=page.query_selector_all(scrape_tag)[:params['navigation']['iterator_size']]
                 self._logger.info('Page read', page=link, look_for=scrape_tag)
+                if len(summaries) == 0:
+                    self._logger.error('scrape failure', type='page', page=link)
                 for summary in summaries:
                     if summary.query_selector(sublink_tag):
                         target=summary.query_selector(sublink_tag)
                         target=params['navigation']['url_prefix']+target.get_attribute('href')
-                        scrape_type += target.split("/")[-2]
+                        #scrape_type.append(target.split("/")[-2])
                         next_config=self.get_config_based_target(target)
                         self._logger.info('navigate', destiny=target)
                         self.navigator(context, target, next_config, scrape_type)
@@ -85,7 +90,7 @@ class Scraper():
                         self._logger.info('Scraping page', page=link)
                         ret = self.scrape_page(summary,link, params)
                         ret["link"] = page.url
-                        ret["scrape_type"] = scrape_type
+                        ret["scrape_type"] = scrape_type[0]
                         self._results.append(ret)
             finally:
                 page.close()
@@ -148,7 +153,7 @@ class Scraper():
 
 if __name__ == "__main__":
     start = time.perf_counter()
-    telenet = Scraper('mobile-vikings')
+    telenet = Scraper('telenet_promo')
     telenet.run()
     end = time.perf_counter()
     print(end-start)

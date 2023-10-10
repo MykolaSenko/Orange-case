@@ -1,21 +1,18 @@
 {"params" : {"studenten": {
                     "navigation": {
-                        "iterator": ".aem-Grid--10"
+                        "iterator": ".cmp-responsivegrid__container.background-transparent >> .aem-Grid.aem-Grid--12.aem-Grid--default--12"
                         }
                     ,"data": {"title":{
-                                    "tag":"h3"
+                                    "tag":".aem-Grid.aem-Grid--12.aem-Grid--default--12.aem-Grid--phone--12 >> .cmp.cmp-title.aem-GridColumn.aem-GridColumn--default--12 >> .text-align--left.heading--3.theme--inherit"
                                     ,"multiple":false}
                             ,"description":{
                                     "tag":".cmp-text__listing--primary-ticks"
                                     ,"multiple": true}
-                            ,"components": {
-                                            "tag":"h4"
-                                            ,"multiple": true}
                             ,"internet_speed": {
                                             "tag":".text"
                                             ,"multiple": true
-                                            ,"re": ".*internet.*?(\\d+\\s[MG]bps)"
-                                            ,"re_type": "search"}
+                                            ,"re": "(\\d+\\s[MG]bps)"
+                                            ,"re_type":"search"}
                             ,"benefits" : {
                                         "re":"*.Gratis?([\\w\\s]+)"
                                         ,"re_type": "find_all"}
