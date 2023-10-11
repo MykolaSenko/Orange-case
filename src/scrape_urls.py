@@ -6,7 +6,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 
 def get_page(url, logger):
-    """this function initialize the connection and clicks the cookie button"""
+    """Initializes the connection and clicks the cookie button"""
     opt=webdriver.ChromeOptions()
     opt.add_argument("--headless")
     driver = webdriver.Chrome(options=opt)
@@ -25,7 +25,7 @@ def get_page(url, logger):
     return driver
 
 def get_category_links(link, logger):
-    """This function take the main page of 'toestellen' and scrape all links to the categories"""
+    """Takes the main page of 'toestellen' and scrape all links to the categories"""
     driver = get_page(link, logger)
     button_xpath = "//a[@class = 'cards--append cards--container cursor--pointer cards--shadow border--all--r border-width--all--r border-color--all--transparant color-text link link--no-underline secondary hardware-categories__items mr--l--sm mb--l--sm mb--s p--m']"
     try:
@@ -54,7 +54,7 @@ def get_category_links(link, logger):
     return category_urls
 
 def get_how_many_pages(url, logger):
-    """this function check how many pages are listed under my single page"""
+    """Checks how many pages are listed under my single page"""
     driver = get_page(url, logger)
     #wait until the element is loaded
     try:

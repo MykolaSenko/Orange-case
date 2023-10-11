@@ -1,6 +1,5 @@
 #! /usr/bin/python3
 import time
-#import scr.scrape_gadgets as sg
 import src.scrape_urls as su
 import src.scrape_gadgets as sg
 import src.Scraper as scraper
