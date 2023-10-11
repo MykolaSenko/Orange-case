@@ -40,3 +40,4 @@ RUN pip install --upgrade pip
 RUN pip install pytest-playwright
 RUN playwright install
 RUN pip install --no-cache-dir "apache-airflow==${AIRFLOW_VERSION}" -r/requirements.txt
+RUN pip install selenium && pip install structlog

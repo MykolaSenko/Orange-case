@@ -25,7 +25,7 @@ class Scraper():
     def run(self):
         """Initializes browser and starts navigation"""
         with sync_playwright() as p:
-            browser=p.chromium.launch(headless=False)
+            browser=p.chromium.launch(headless=True)
             context=browser.new_context()
             self._start_navigation(self._config['start']['url'], context)
             browser.close()

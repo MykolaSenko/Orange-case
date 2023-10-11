@@ -1,5 +1,6 @@
 #! /usr/bin/python3
 from playwright.sync_api import Playwright, sync_playwright
+from pathlib import Path
 import re
 import pandas as pd
 from playwright._impl._api_types import Error
@@ -143,20 +144,3 @@ def get_urls_from_csv(path, logger):
         except:
             logger.warning('scrape failure', type='page',target="links",msg="urls missing")
     return all_urls
-
-if __name__ == "__main__":
-    import structlog
-    logger = structlog.get_logger()
-    all_urls=get_urls_from_csv("devices_urls.csv", logger)
-  
-    start = time.perf_counter()
-
-
-    for i in all_urls:
-        device = i["category"]
-        device_url_list = i["urls"]
-        df = pd.DataFrame(get_devices(device_url_list,logger),columns=['product_id', 'model', 'color', 'memory', 'price_regular', 'price_for_clients', 'link'])
-        df.to_csv(f"data/telenet_{device}.csv")
-    os.remove("devices_urls.csv")
-    end = time.perf_counter()
-    print(f'Time required to scrape: {end}-{start} seconds')
