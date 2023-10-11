@@ -63,6 +63,6 @@ Bo Cao, Data Engineer. <a href = 'https://www.linkedin.com/in/bo-cao-313ab244'> 
 
 Henrique
 
-Mykola
+Mykola Senko [LinkedIn](https://www.linkedin.com/in/mykola-senko-683510a4/), [GitHub](https://github.com/MykolaSenko)
 
 George Hollingdale, Data Analyst. <a href = 'https://www.linkedin.com/in/george-hollingdale/'> Linkedin </a> & <a href = 'https://github.com/ghollingdale/'> GitHub </a>
