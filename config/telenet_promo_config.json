@@ -1,36 +1,22 @@
 {"params" : {"studenten": {
                     "navigation": {
-                        "iterator": ".aem-Grid--10"
+                        "iterator": ".display--flex.flex-direction--column.position--full-height.justify-content--between--sm"
                         }
                     ,"data": {"title":{
-                                    "tag":"h3"
+                                    "tag":".text-align--left.heading--3.theme--inherit"
                                     ,"multiple":false}
                             ,"description":{
                                     "tag":".cmp-text__listing--primary-ticks"
                                     ,"multiple": true}
-                            ,"components": {
-                                            "tag":"h4"
-                                            ,"multiple": true}
                             ,"internet_speed": {
                                             "tag":".text"
                                             ,"multiple": true
-                                            ,"re": ".*internet.*?(\\d+\\s[MG]bps)"
-                                            ,"re_type": "search"}
+                                            ,"re": "(\\d+\\s[MG]bps)"
+                                            ,"re_type":"search"}
                             ,"benefits" : {
                                         "re":"*.Gratis?([\\w\\s]+)"
                                         ,"re_type": "find_all"}
                             }}
-        ,"---" : {"navigation":{
-                        "iterator": ".cmp-responsivegrid__container"
-                        ,"iterator_size":1}
-                  ,"data": {"components": {
-                                        "tag":".heading--4"
-                                        ,"multiple": true}
-                              ,"description":{
-                                        "tag":".cmp-text__listing--primary-ticks"
-                                        ,"multiple":true}
-                            }
-                }
         ,"default": {"navigation":{
                         "iterator": ".cmp-product-summary"
                         ,"iterator_size": null

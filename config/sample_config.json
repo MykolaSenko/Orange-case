@@ -1,0 +1,46 @@
+{
+"params" :
+    {
+    "subscription":
+        {
+            "navigation": {
+ 
+            }
+            ,"data": {
+            "title":{
+                "tag":"div.data-title"}
+            ,"description":{
+                "tag":"div.element-pack"
+                ,"multiple": true}
+            ,"internet_speed": {
+                        "tag":"div.speed"
+                        ,"multiple": false}
+            }
+                }
+    ,"default":
+        {
+            "navigation":{
+            "iterator": "div.item"
+            ,"iterator_size": null
+            ,"sub_link_tag": "a:has-text('Haha, whatever')"
+            ,"page_load": ".monthlyPrice__price"
+            ,"url_prefix" : ""
+                        }
+            ,"data": {
+            "name":{
+                        "tag":"h5.title"}
+              ,"description":{
+                        "tag":"ul.list_contents"
+                        ,"multiple":true}
+              ,"initial_price":{
+                        "tag":".monthlyPrice__price"
+                        ,"re": ["[€\\s\\n-]",""]
+                        ,"re_type": "sub"}
+                    }
+        }
+    }
+,"start": {
+    "url":"http://sample_web_page.com/packs"
+    ,"locator": "div.packs"
+    }
+}
