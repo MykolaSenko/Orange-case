@@ -8,7 +8,7 @@ from selenium.webdriver.common.by import By
 def get_page(url, logger):
     """this function initialize the connection and clicks the cookie button"""
     opt=webdriver.ChromeOptions()
-    # opt.add_argument("--headless")
+    opt.add_argument("--headless")
     driver = webdriver.Chrome(options=opt)
 
     driver.get(url)
