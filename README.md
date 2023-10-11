@@ -65,4 +65,4 @@ Henrique
 
 Mykola
 
-George
+George Hollingdale, Data Analyst. <a href = 'https://www.linkedin.com/in/george-hollingdale/'> Linkedin </a> & <a href = 'https://github.com/ghollingdale/'> GitHub </a>
