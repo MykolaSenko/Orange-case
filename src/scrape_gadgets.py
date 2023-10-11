@@ -11,7 +11,7 @@ import time
 
 def scrape_gadgets(playwright: Playwright,link, logger):
     """
-    The function `scrape_gadgets` uses Playwright to scrape data from a list of links, specifically
+    Uses Playwright to scrape data from a list of links, specifically
     extracting information about smartphone models, colors, memories, regular prices, and prices for
     clients, and then saves the data to a CSV file.
     :param playwright: The `playwright` parameter is an instance of the Playwright library. It is used
@@ -19,8 +19,6 @@ def scrape_gadgets(playwright: Playwright,link, logger):
     :type playwright: Playwright
     """
     data = []
-    # The code block you provided is a loop that iterates over each link in the `list_of_links` list.
-    # For each link, it performs the following actions:
     browser = playwright.chromium.launch(headless=True)
     context = browser.new_context()
     page = context.new_page()
@@ -36,23 +34,14 @@ def scrape_gadgets(playwright: Playwright,link, logger):
     except:
         logger.critical('scrape failure', msg="Page Timeout", type='page', page=link)
         return
-    # The code block you provided is a loop that iterates over each color element in the `colors` list.
-    # For each color element, it performs the following actions:
     if colors:
         for color_element in colors:
             color = color_element.text_content()
             try:
                 page.locator("label").filter(has_text = color).check()
             except Error as e:
-                logger.warning('Scrape failure', type='field',target='color', page=link)
-                # try:
-                #     page.locator("label").filter(has_text = re.compile(r"^Wit$")).check()
-                # except:
-                #     page.locator("label").filter(has_text="Wit(Niet beschikbaar)").check()
-
+                logger.warning('scrape failure', type='field',target='color', page=link)
             memories = page.locator(".heading--6.heading--nomargin.hardware-product--info__content__configurations-size__label").all()
-            # The code block you provided is a loop that iterates over each memory element in the
-            # `memories` list. For each memory element, it performs the following actions:
             if memories:
                 for memory_element in memories:
                     list_of_models = []
@@ -70,7 +59,7 @@ def scrape_gadgets(playwright: Playwright,link, logger):
                     if price_regular_tag:
                         price_regular = price_regular_tag.text_content()
                     else:
-                        logger.warning('Scrape failure', type='field',target='price_regular', page=link)
+                        logger.warning('scrape failure', type='field',target='price_regular', page=link)
                         price_regular = None
                     list_of_models.append(price_regular)
                     price_for_clients = page.query_selector(".heading--nomargin.price--superscript-amount.heading--3").text_content()
@@ -80,7 +69,7 @@ def scrape_gadgets(playwright: Playwright,link, logger):
             else:
                 list_of_models = []
                 memory = None
-                logger.warning('Scrape failure', type='field',target='memory', page=link)
+                logger.warning('scrape failure', type='field',target='memory', page=link)
                 product_id = re.findall(r"productId=(\d+)", link)
                 product_id = product_id[0]
                 list_of_models.append(product_id)
@@ -92,7 +81,7 @@ def scrape_gadgets(playwright: Playwright,link, logger):
                 if price_regular_tag:
                     price_regular = price_regular_tag.text_content()
                 else:
-                    logger.warning('Scrape failure', type='field',target='price_regular', page=link)
+                    logger.warning('scrape failure', type='field',target='price_regular', page=link)
                     price_regular = None
                 list_of_models.append(price_regular)
                 price_for_clients = page.query_selector(".heading--nomargin.price--superscript-amount.heading--3").text_content()
@@ -102,9 +91,9 @@ def scrape_gadgets(playwright: Playwright,link, logger):
     else:
         list_of_models = []
         memory = None
-        logger.warning('Scrape failure', type='field',target='memory', page=link)
+        logger.warning('scrape failure', type='field',target='memory', page=link)
         color=None
-        logger.warning('Scrape failure', type='field',target='color', page=link)
+        logger.warning('scrape failure', type='field',target='color', page=link)
         product_id = re.findall(r"productId=(\d+)", link)
         product_id = product_id[0]
         list_of_models.append(product_id)
@@ -116,7 +105,7 @@ def scrape_gadgets(playwright: Playwright,link, logger):
         if price_regular_tag:
             price_regular = price_regular_tag.text_content()
         else:
-            logger.warning('Scrape failure', type='field',target='price_regular', page=link)
+            logger.warning('scrape failure', type='field',target='price_regular', page=link)
             price_regular = None
         list_of_models.append(price_regular)
         price_for_clients = page.query_selector(".heading--nomargin.price--superscript-amount.heading--3").text_content()
@@ -153,7 +142,7 @@ def get_urls_from_csv(path, logger):
             device_url_list = ast.literal_eval(device_list_string)
             all_urls.append({"category":device,"urls":device_url_list})
         except:
-            logger.warning('Scrape failure', type='page',target="links",msg="urls missing")
+            logger.warning('scrape failure', type='page',target="links",msg="urls missing")
     return all_urls
 
 if __name__ == "__main__":

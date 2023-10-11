@@ -1,13 +1,10 @@
 #! /usr/bin/python3
-
-#Created by Henrique Rauen (rickgithub@hsj.email)
-import asyncio
 import time
 import re
 import pandas as pd
 import json
 from copy import deepcopy
-from playwright.sync_api import sync_playwright, Route, expect
+from playwright.sync_api import sync_playwright
 
 class Scraper():
     def __init__(self,scraper, logger):
@@ -15,22 +12,27 @@ class Scraper():
         self._results = []
         self._scraper = scraper
         try:
-            with open(scraper + '_config.json','r') as file:
+            with open('config/'+scraper + '_config.json','r') as file:
                 self._config = json.load(file)
         except:
-            self._logger.critical('Error loading config', config_file=scraper)
+            self._logger.critical('error loading config', config_file=scraper)
 
     def filter(self,objs):
+        """In case specific providers need filtering in the initial page,
+        this method is here to be overwritten by a provider specific child class"""
         return objs
 
     def run(self):
+        """Initializes browser and starts navigation"""
         with sync_playwright() as p:
             browser=p.chromium.launch(headless=False)
             context=browser.new_context()
-            self.start_navigation(self._config['start']['url'], context)
+            self._start_navigation(self._config['start']['url'], context)
             browser.close()
 
-    def start_navigation(self,url, context):
+    def _start_navigation(self,url, context):
+        """From a given start page on config, initializes navigation by
+        following links according to specified config"""
         page=context.new_page()
         page.goto(url)
         objs=(page.locator(self._config['start']['locator'])
@@ -49,7 +51,7 @@ class Scraper():
                     scrape_type = [tmp[-1]]
                 else:
                     scrape_type = [tmp[-2]]
-                next_config=self.get_config_based_target(link)
+                next_config=self._get_config_based_target(link)
             else:
                 # If it's not link it's clickable object, so we click
                 link = 'here'
@@ -57,11 +59,14 @@ class Scraper():
                 obj.click()
                 next_config=self._config['params']['default']
             self._logger.info('navigate', destiny=link)
-            self.navigator(context,link,next_config, scrape_type)
+            self._navigator(context,link,next_config, scrape_type)
         df = pd.DataFrame(self._results)
         df.to_csv("data/" + self._scraper + '.csv')
 
-    def navigator(self,context,link,params, scrape_type):
+    def _navigator(self,context,link,params, scrape_type):
+            """Navigator method decides wheter we should navigate further
+            or scrape this page. Can be called recursively if navigation is deep.
+            Uses 'navigation' parameters from the config file"""
             scrape_tag=params['navigation']['iterator']
             sublink_tag=params['navigation'].get('sub_link_tag','gjkdgbkd')
             try:
@@ -78,7 +83,7 @@ class Scraper():
                                                                                  'body'))
             else:
                 summaries=page.query_selector_all(scrape_tag)[:params['navigation']['iterator_size']]
-                self._logger.info('Page read', page=link, look_for=scrape_tag)
+                self._logger.info('page read', page=link, look_for=scrape_tag)
                 if len(summaries) == 0:
                     self._logger.error('scrape failure', type='page', page=link)
                 for summary in summaries:
@@ -86,12 +91,12 @@ class Scraper():
                         target=summary.query_selector(sublink_tag)
                         target=params['navigation']['url_prefix']+target.get_attribute('href')
                         #scrape_type.append(target.split("/")[-2])
-                        next_config=self.get_config_based_target(target)
+                        next_config=self._get_config_based_target(target)
                         self._logger.info('navigate', destiny=target)
-                        self.navigator(context, target, next_config, scrape_type)
+                        self._navigator(context, target, next_config, scrape_type)
                     else:
-                        self._logger.info('Scraping page', page=link)
-                        ret = self.scrape_page(summary,link, params)
+                        self._logger.info('scraping page', page=link)
+                        ret = self._scrape_page(summary,link, params)
                         if ret:
                             ret["link"] = page.url
                             ret["scrape_type"] = scrape_type[0]
@@ -99,7 +104,8 @@ class Scraper():
             finally:
                 page.close()
 
-    def get_config_based_target(self,target):
+    def _get_config_based_target(self,target):
+        """Updates configuration based on current page"""
         ret=deepcopy(self._config['params'])
         keys=ret.keys()
         try:
@@ -109,17 +115,18 @@ class Scraper():
                         ret['default'][k].update(ret[key][k])
                     break
         except:
-            self._logger.critical('Config error', target=target)
+            self._logger.critical('config error', target=target)
         finally:
             return ret['default']
 
-    def scrape_page(self,summary,link,params):
+    def _scrape_page(self,summary,link,params):
+        """Uses the config to scrap fields from given subsection of page"""
         ret ={}
         for key,item in params['data'].items():
-            result = self.get_text_from_tag(summary,[item.get('tag','body')],item.get('multiple',False))
+            result = self._get_text_from_tag(summary,[item.get('tag','body')],item.get('multiple',False))
             if len(result)> 1:
                 if item.get('re'):
-                    result=self.execute_regex(item['re'], item['re_type'], result)
+                    result=self._execute_regex(item['re'], item['re_type'], result)
                 if len(result) > 0:
                     ret[key]=result
             else:
@@ -128,7 +135,8 @@ class Scraper():
             self._logger.error('scrape failure', type='page', page=link, data=summary.inner_text())
         return ret
 
-    def execute_regex(self,pattern, re_type, text):
+    def _execute_regex(self,pattern, re_type, text):
+        """Execute regex according to config file"""
         res=''
         try:
             if re_type=='search':
@@ -142,7 +150,8 @@ class Scraper():
         finally:
             return res
 
-    def get_text_from_tag(self,element,selector, multiple=False):
+    def _get_text_from_tag(self,element,selector, multiple=False):
+        """Get text from a given css object as defined in the config file"""
         res = ''
         for sel in selector:
             if multiple:
