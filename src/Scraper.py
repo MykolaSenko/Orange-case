@@ -15,7 +15,7 @@ class Scraper():
         self._results = []
         self._scraper = scraper
         try:
-            with open(scraper + '_config.json','r') as file:
+            with open('config/'+scraper + '_config.json','r') as file:
                 self._config = json.load(file)
         except:
             self._logger.critical('Error loading config', config_file=scraper)
