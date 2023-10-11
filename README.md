@@ -60,7 +60,7 @@ Our scraping strategy involves using Selenium and Playwright to:
 Please note that web scraping may raise legal and ethical concerns. Ensure that your scraping activities comply with the website's terms of service and applicable laws and regulations. Use this code responsibly and respectfully.
 
 ## About us
-Ying
+Weiying Zhao, Data Analyst. <a href = 'https://www.linkedin.com/in/weiying-zhao-a4a307241/'> Linkedin </a>
 
 Bo Cao, Data Engineer. <a href = 'https://www.linkedin.com/in/bo-cao-313ab244'> Linkedin </a>
 
