@@ -52,7 +52,7 @@ def full_pipeline_etl():
     def scrape_all_gadgets():
         logger = structlog.get_logger()
         all_urls=sg.get_urls_from_csv(f"{Path().cwd()}/rawdata/devices_urls.csv",logger)
-        for i in all_urls[0:1]:
+        for i in all_urls:
             device = i["category"]
             device_url_list = i["urls"]
             df = pd.DataFrame(sg.get_devices(device_url_list,logger),columns=['product_id', 'model', 'color', 'memory', 'price_regular', 'price_for_clients', 'link'])
