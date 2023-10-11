@@ -5,10 +5,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
+
 def get_page(url, logger):
     """Initializes the connection and clicks the cookie button"""
-    opt=webdriver.ChromeOptions()
-    opt.add_argument("--headless")
+    opt=webdriver.chrome.options.Options()
+    opt.add_argument('--headless')
+    opt.add_argument('--no-sandbox')
+    opt.add_argument('--disable-dev-shm-usage')
     driver = webdriver.Chrome(options=opt)
 
     driver.get(url)
@@ -95,15 +98,3 @@ def get_all_urls(device_url, logger):
     except:
         logger.critical('scrape failure', msg="Page Timeout", type='page', page=device_url)
 
-if __name__ == "__main__":
-    #get the category first , the return result is a list of dictionary:
-    import structlog
-    logger = structlog.get_logger()
-    category_urls = get_category_links("https://www2.telenet.be/residential/nl/toestellen/?intcmp=ToestNav", logger)
-
-    all_devices_urls = []
-    for category in category_urls:
-        urls = get_all_urls(category['url'], logger)
-        all_devices_urls.append({"category":category['category'].replace(" ","_"),"urls":urls})
-        df = pd.DataFrame(all_devices_urls)
-        df.to_csv("devices_urls.csv")

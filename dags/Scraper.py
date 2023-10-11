@@ -5,6 +5,7 @@ import pandas as pd
 import json
 from copy import deepcopy
 from playwright.sync_api import sync_playwright
+from pathlib import Path
 
 class Scraper():
     def __init__(self,scraper, logger):
@@ -12,7 +13,7 @@ class Scraper():
         self._results = []
         self._scraper = scraper
         try:
-            with open('config/'+scraper + '_config.json','r') as file:
+            with open(f'{Path().cwd()}/dags/config/'+scraper + '_config.json','r') as file:
                 self._config = json.load(file)
         except:
             self._logger.critical('error loading config', config_file=scraper)
@@ -61,7 +62,7 @@ class Scraper():
             self._logger.info('navigate', destiny=link)
             self._navigator(context,link,next_config, scrape_type)
         df = pd.DataFrame(self._results)
-        df.to_csv("data/" + self._scraper + '.csv')
+        df.to_csv(f"{Path().cwd()}/rawdata" + self._scraper + '.csv')
 
     def _navigator(self,context,link,params, scrape_type):
             """Navigator method decides wheter we should navigate further
