@@ -14,7 +14,6 @@ This project involves using Selenium and Playwright to scrape data from telecom 
 - Python 3.10
 - Chrome web browser
 - Webdriver for Selenium and Playwright
-- requirements.txt
 
 ## Installation
 ![python version](https://img.shields.io/badge/python-3.10.6+-blue) ![pandas](https://img.shields.io/badge/pandas-green) ![playwright](https://img.shields.io/badge/playwright-orange) ![selenium](https://img.shields.io/badge/selenium-pink) ![structlog](https://img.shields.io/badge/structlog-blue)
@@ -27,7 +26,7 @@ This project involves using Selenium and Playwright to scrape data from telecom 
    ```
 3. Install the required Python packages using `pip`:
    ```
-   pip install -r requirements.txt
+   pip install -r local_requirements.txt
    ```
 4. Install playwright by following this official documentation: [install playwright](https://playwright.dev/python/docs/intro)
 
