@@ -66,9 +66,9 @@ Bo Cao, Data Engineer. <a href = 'https://www.linkedin.com/in/bo-cao-313ab244'> 
 
 <a href='https://github.com/henrique-rauen'>Henrique</a>, Data Scientist. <a href='https://www.linkedin.com/in/henrique-rauen/'> Linkedin </a>
 
-Mykola
+Mykola Senko [LinkedIn](https://www.linkedin.com/in/mykola-senko-683510a4/), [GitHub](https://github.com/MykolaSenko)
 
-George
+<a href = 'https://github.com/ghollingdale/'>George Hollingdale</a>, Data Analyst. <a href = 'https://www.linkedin.com/in/george-hollingdale/'> Linkedin </a>
 
 ## Configuration
 
