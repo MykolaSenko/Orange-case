@@ -7,8 +7,11 @@ import src.Scraper as scraper
 import structlog
 import logging
 import os
+from pathlib import Path
 import pandas as pd
 
+if not os.path.isdir('logs'):
+    os.makedirs('logs')
 structlog.configure(
     wrapper_class=structlog.make_filtering_bound_logger(logging.WARNING),
     processors=[
@@ -17,7 +20,7 @@ structlog.configure(
             structlog.stdlib.PositionalArgumentsFormatter(),
             structlog.processors.JSONRenderer()],
     logger_factory=structlog.WriteLoggerFactory(
-        file=Path(f"logs/{time.ctime()}").with_suffix(".log").open("wt"))
+        file=Path(f"logs/{time.strftime('%d-%m-%Y', time.localtime())}").with_suffix(".log").open("wt+"))
 )
 logger=structlog.get_logger()
 start = time.perf_counter()
@@ -36,11 +39,11 @@ df = pd.DataFrame(all_devices_urls)
 df.to_csv("devices_urls.csv")
 #Scrape gadgets from saved urls
 all_urls=sg.get_urls_from_csv("devices_urls.csv",logger)
-# for i in all_urls:
-#     device = i["category"]
-#     device_url_list = i["urls"]
-#     df = pd.DataFrame(sg.get_devices(device_url_list,logger),columns=['product_id', 'model', 'color', 'memory', 'price_regular', 'price_for_clients', 'link'])
-#     df.to_csv(f"data/telenet_{device}.csv")
-# os.remove("devices_urls.csv")
-# end = time.perf_counter()
-# print(f'Time required to scrape: {end}-{start} seconds')
+for i in all_urls:
+     device = i["category"]
+     device_url_list = i["urls"]
+     df = pd.DataFrame(sg.get_devices(device_url_list,logger),columns=['product_id', 'model', 'color', 'memory', 'price_regular', 'price_for_clients', 'link'])
+     df.to_csv(f"data/telenet_{device}.csv")
+os.remove("devices_urls.csv")
+end = time.perf_counter()
+print(f'Time required to scrape: {end}-{start} seconds')
