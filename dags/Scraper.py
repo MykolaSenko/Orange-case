@@ -1,4 +1,14 @@
 #! /usr/bin/python3
+""" Copyright 2023 by:
+Henrique Rauen Silva Jardim
+Bo Cao
+Mykola Senko
+George Hollingdale
+Weiying Zhao
+
+Usage agreements can be achieved by contacting the code owners
+"""
+
 import time
 import re
 import pandas as pd
