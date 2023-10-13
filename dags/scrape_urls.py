@@ -1,4 +1,13 @@
 #! /usr/bin/python3
+""" Copyright 2023 by:
+Henrique Rauen Silva Jardim
+Bo Cao
+Mykola Senko
+George Hollingdale
+Weiying Zhao
+
+Usage agreements can be achieved by contacting the code owners
+"""
 import pandas as pd
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC

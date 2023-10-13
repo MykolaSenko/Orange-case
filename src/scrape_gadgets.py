@@ -1,4 +1,13 @@
 #! /usr/bin/python3
+""" Copyright 2023 by:
+Henrique Rauen Silva Jardim
+Bo Cao
+Mykola Senko
+George Hollingdale
+Weiying Zhao
+
+Usage agreements can be achieved by contacting the code owners
+"""
 from playwright.sync_api import Playwright, sync_playwright
 from pathlib import Path
 import re
